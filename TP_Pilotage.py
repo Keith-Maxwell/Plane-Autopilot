@@ -157,6 +157,7 @@ print('Transfer function gamma : \n', tf_gamma)
 Yv_phu, Tv_phu = control.matlab.step(ss(tf_v))
 Ygamma_phu, Tgamma_phu = control.matlab.step(ss(tf_gamma))
 
+'''
 plt.figure()
 plt.plot(Tv_phu, Yv_phu, label='v/DM')
 plt.plot(Tgamma_phu, Ygamma_phu, label='gamma/DM')
@@ -164,7 +165,7 @@ plt.legend()
 plt.title('Reponse indicielle Phugoid mode')
 plt.tight_layout()
 plt.savefig("Plots/reponse_indicielle_phugoid.png", dpi=300)
-
+'''
 # ------
 print('\n------------------------------------------------------------------')
 
@@ -191,6 +192,7 @@ print('Transfer function q : \n', tf_q)
 Yq_sp, Tq_sp = control.matlab.step(ss(tf_q))
 Yalpha_sp, Talpha_sp = control.matlab.step(ss(tf_alpha))
 
+"""
 plt.figure()
 plt.plot(Tq_sp, Yq_sp, label='q/DM')
 plt.plot(Talpha_sp, Yalpha_sp, label='alpha/DM')
@@ -198,7 +200,7 @@ plt.legend()
 plt.title('Reponse indicielle Short Period mode')
 plt.tight_layout()
 plt.savefig("Plots/reponse_indicielle_shortperiod.png", dpi=300)
-
+"""
 
 
 
@@ -245,11 +247,12 @@ print(tf(syscl))
 control.matlab.damp(syscl)
 
 Yq, Tq = control.matlab.step(syscl)
+"""
 plt.figure()
 plt.plot(Tq, Yq)
 plt.title("Step response with feedback loop")
 plt.savefig('Plots/step_response_feedback.png', dpi=300)
-
+"""
 
 print('\n------------------------------------------------------------------')
 
@@ -276,6 +279,7 @@ Y_open_loop, T_open_loop = control.step_response(ss(open_loop_alpha), T=temps)
 Y_feedback, T_feedback = control.step_response(feedback_without_filter_alpha, T=temps)
 Y_filter, T_filter = control.step_response(feedback_with_filter_alpha, T=temps)
 
+"""
 plt.figure()
 plt.plot(Y_open_loop, T_open_loop, label='open loop')
 plt.plot(Y_feedback, T_feedback, label='closed loop')
@@ -283,8 +287,20 @@ plt.plot(Y_filter, T_filter, label='closed loop filter')
 plt.legend()
 plt.title("Step response with feedback loop and washout filter")
 plt.savefig('Plots/step_response_feedback_and_filter.png', dpi=300)
+"""
 
+#Choose the gain Kγ of this flight path angle control loop with the help of sisotool;
+#Propose a first choice of a gain allowing a gain margin ≥ 7 dB and a phase margin ≥ 35° and an optimized settling time (to within a 5 % threshold).
+sisotool(-syscl, 0.01, 1)
+#After manual tuning, we find :
 
+K_gamma_test = - 0.198
 
+#Comment : 
 
-sisotool(-sys, 0.01, 1)
+#Choose a second tuning (that will be kept for going on with the study), with the following requirements:
+#an overshoot D1 ≤ 5%;
+#a settling time at 5% tr5% for a step response that must be optimized (meaning minimized);
+#the pseudo-periodic modes must be correctly damped (ξ ≥ 0.5).
+
+#K_gamma = 0.16791
