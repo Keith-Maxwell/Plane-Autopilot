@@ -36,6 +36,13 @@ Y = F_delta - X_G
 tau = 0.71  #time constant (s) -> used in TF for altitude
 
 # --------
+
+
+
+
+
+
+
 # --------
 
 # Determine the equilibrium conditions around the chosen operating point (point 42)
@@ -69,10 +76,17 @@ while (True):
         break
 
 print('\n------------------------------------------------------------------')
-print(X,Y)
+print("conditions at equilibrium")
 print(
     f'\nalpha eq = {round(np.degrees(alpha_eq), 3)} degrees \nF_p_eq = {round(F_p_xeq, 3)} Newtons'
 )
+
+
+
+
+
+
+
 
 # --------
 
@@ -103,8 +117,8 @@ Z_gamma = (g0 * np.sin(gamma_eq)) / V_eq
 Z_delta_m = (Q * S * C_z_delta) / (m * V_eq)
 
 # --------
-print('\n------------------------------------------------------------------')
-
+print('\n\n\n------------------------------------------------------------------')
+print("State space representation of the system")
 # State space representation of the system
 X = np.array([V_eq, gamma_eq, alpha_eq, Q, delta_m_eq, tau]).T
 A = np.array([[-X_V, -X_gamma, -X_alpha, 0, 0, 0], [Z_V, 0, Z_alpha, 0, 0, 0],
@@ -120,19 +134,26 @@ print('\nB =\n', B)
 print('\nC =\n', C)
 print('\nD =\n', D)
 
+
+
+
+
+
+
+
+
+
 # --------
-print('\n------------------------------------------------------------------')
+print('\n\n\n------------------------------------------------------------------')
 
 #Study of open loop modes: give the values of the modes, theirdamping ratio and their proper pulsation
-print('\n\nOpen loop system :')
+print('\nOpen loop system :')
 control.matlab.damp(ss(A,B,C,D))
 
 # -------
-print('\n------------------------------------------------------------------')
+print('\n\n------------------------------------------------------------------')
 
 # Study the transient phase of the uncontrolled aircraft (shortperiod and phugoid oscillation modes)
-
-fig, (ax1, ax2) = plt.subplots(2, 1) # setup a plot for the step responses
 
 # ------ Phugoid mode ---------
 # State space representation
@@ -142,7 +163,7 @@ C_phu = np.eye(2)
 D_phu = 0
 
 sys_phu = ss(A_phu, B_phu, C_phu, D_phu)
-print("\n\n\nOpen loop Phugoid mode :")
+print("\nOpen loop Phugoid mode :")
 control.matlab.damp(sys_phu)
 
 # V transfer function :
@@ -167,7 +188,7 @@ plt.title('Reponse indicielle Phugoid mode')
 plt.savefig("Plots/reponse_indicielle_phugoid.png", dpi=300)
 
 # ------
-print('\n------------------------------------------------------------------')
+print('\n\n------------------------------------------------------------------')
 
 # ------ Short Period mode ---------
 # State space representation
@@ -177,7 +198,7 @@ C_sp = np.eye(2)
 D_sp = 0
 
 sys_sp = ss(A_sp, B_sp, C_sp, D_sp)
-print("\n\n\nOpen loop Short Period mode :")
+print("\nOpen loop Short Period mode :")
 control.matlab.damp(sys_sp)
 
 # Alpha transfer function :
@@ -205,7 +226,8 @@ plt.savefig("Plots/reponse_indicielle_shortperiod.png", dpi=300)
 
 
 # ------
-print('\n------------------------------------------------------------------')
+print('\n\n\n------------------------------------------------------------------')
+print("Speed controlled with auto-throttle")
 
 # We will now consider that the speed is controlled with an auto-throttle which is perfect (with an instantaneous response).The speed V can be removed from the state vector
 # state vector : (gamma alpha q theta z)
@@ -219,17 +241,22 @@ sys_autothrottle = ss(A5, B5, Cq, Dq)
 print('\n Transfer Function with auto-throttle :')
 print(tf(sys_autothrottle))
 control.matlab.damp(sys_autothrottle)
-print()
+
+
+
+
+
 
 
 # -------
-print('\n------------------------------------------------------------------')
+print('\n\n\n------------------------------------------------------------------')
 print('------ Q feedback ---------')
 # With the help of sisotool (see sisopy31.py), choose the gain Kr of q feedback loop such as the closed loop damping ratio is xi=0.65.
+
 #sisotool(-sys_autothrottle, 0.01, 1)
 
 # after manual tuning, we find
-Kr = - 0.0859
+Kr = - 0.08602
 
 # -------
 # feedback
@@ -251,13 +278,13 @@ control.matlab.damp(Tf_feedback_Q)
 Yq, Tq = control.matlab.step(Tf_feedback_Q)
 plt.figure()
 plt.plot(Tq, Yq)
-plt.title("Step response with feedback loop")
+plt.title("Q step response with feedback loop")
 plt.xlabel('Time')
 plt.savefig('Plots/Q_feedback_step_response.png', dpi=300)
 
 
 
-print('\n------------------------------------------------------------------')
+print('\n\n\n------------------------------------------------------------------')
 print('------- Q feedback with Washout filter ------')
 # Choose the time constant τ of the washout filter (τs/1+τs) allowing to have the same steady state gain for alpha with or without the q feedback loop. Plot the open loop response, the closed loop response without filter and the closed loop response with the washout filter. In the following of this study, this filter will not be taken into account.
 
@@ -290,79 +317,78 @@ plt.plot(Y_feedback, T_feedback, label='closed loop')
 plt.plot(Y_filter, T_filter, label='closed loop filter')
 plt.legend()
 plt.xlabel('Time')
-plt.title("Step response with feedback loop and washout filter")
+plt.title("Q step response with feedback loop and washout filter")
 plt.savefig('Plots/Q_feedback_Washout_filter.png', dpi=300)
 
-print('\n------------------------------------------------------------------')
+
+
+
+
+
+print('\n\n\n------------------------------------------------------------------')
 print('------ Gamma feedback ---------')
 #Choose the gain Kγ of this flight path angle control loop with the help of sisotool;
 #Propose a first choice of a gain allowing a gain margin ≥ 7 dB and a phase margin ≥ 35° and an optimized settling time (to within a 5 % threshold).
-
-sisotool(-Tf_feedback_Q) #, 0.01, 1
+Tf_feedback_Q_gamma = ss2tf(ss(Aq, Bq, np.array([1, 0, 0, 0, 0]), 0))
+# sisotool(Tf_feedback_Q_gamma)
 
 #After manual tuning, we find :
-#K_gamma_test = - 0.199
-#Comment : If GM = 7dB then  tr5% = 1.172s. Maybe problem with OS
+#K_gamma_test = 6.2926
+
+#(Comment : If GM = 7dB then  tr5% = 1.172s. Maybe problem with OS) solved ?
 
 #Choose a second tuning (that will be kept for going on with the study), with the following requirements:
 #an overshoot D1 ≤ 5%;
 #a settling time at 5% tr5% for a step response that must be optimized (meaning minimized);
 #the pseudo-periodic modes must be correctly damped (ξ ≥ 0.5).
-"""
-K_gamma = - 0.0649 #minimized tr5% = 0.846s
+
+K_gamma = 12.41568 #minimized tr5% = 0.799s
 
 #State space with V_p = 0
-A_gamma, B_gamma, C_gamma, D_gamma = ssdata(sys_autothrottle_Q_feedback)
+A_gamma = Aq - K_gamma * Bq * np.array([1, 0, 0, 0, 0])
+B_gamma = K_gamma * Bq
 
-sys_gamma = ss(A_gamma,B_gamma,C_gamma,D_gamma)
-sys_gamma_cl = control.feedback(K_gamma * sys_autothrottle_Q_feedback, 1)
-print('\nState space representation with gamma feedback loop :\n')
-print(tf2ss(sys_gamma_cl))
 
 print('\nTransfer function of the system with gamma feedback loop :\n')
-print(tf(sys_gamma_cl))
+Tf_feedback_gamma = ss2tf(ss(A_gamma, B_gamma, np.array([1, 0, 0, 0, 0]), 0))
+print(Tf_feedback_gamma)
 
-control.matlab.damp(sys_gamma_cl)
+control.matlab.damp(Tf_feedback_gamma)
 
-
-Y_gamma, T_gamma = control.matlab.step(sys_gamma_cl)
-
-
+Y_gamma, T_gamma = control.matlab.step(Tf_feedback_gamma)
 plt.figure()
 plt.plot(T_gamma, Y_gamma)
 plt.xlabel('Time')
-plt.title("Step response with feedback loop with gamma as output")
-plt.savefig('Plots/step_response_feedback_gamma.png', dpi=300)
+plt.title("step response with feedback loop with gamma as the output")
+plt.savefig('Plots/gamma_feedback_step_response.png', dpi=300)
 
 
-print('\n------------------------------------------------------------------')
+
+
+
+
+print('\n\n\n------------------------------------------------------------------')
 print('------ Z feedback ---------')
 #Z feedback loop
+Tf_feedback_gamma_z = ss2tf(ss(A_gamma, B_gamma, np.array([0, 0, 0, 0, 1]), 0))
+#sisotool(Tf_feedback_gamma_z)
 
-#control.sisotool(-sys_gamma_cl, 0.01, 1)
-K_z = - 0.696 #There is a problem with the OS (donc sans doute avant aussi)
+K_z = 0.00327 # tr5% at 1.548 s and damping at 0.555 and 0.709
 
-A_z, B_z, C_z, D_z = ssdata(sys_gamma_cl) # ici je récupère le système d'avant pour créer le nouveau, je sais pas si c'est la bonne méthode.
-print("auto throttle C=", ssdata(sys_autothrottle)[2])
-print("q feedback C=", C_gamma)
-print("Q and gamma feedback C=", C_z)
+A_z = A_gamma - K_z * B_gamma * np.array([0, 0, 0, 0, 1])
+B_z = K_z * B_gamma
 
-sys_z = ss(A_z,B_z,C_z,D_z)
-sys_z_cl = control.feedback(K_z * sys_gamma_cl, 1)
-print('\nState space representation with feedback loop :\n')
-print(tf2ss(sys_z_cl))
+print('\nTransfer function of the system with z feedback loop :\n')
+Tf_feedback_z = ss2tf(ss(A_z, B_z, np.array([0, 0, 0, 0, 1]), 0))
+print(Tf_feedback_z)
 
-print('\nTransfer function of the system with feedback loop :\n')
-print(tf(sys_z_cl))
-control.matlab.damp(sys_z_cl)
+control.matlab.damp(Tf_feedback_z)
 
 
-Y_z, T_z = control.matlab.step(sys_z_cl)
-
+Y_z, T_z = control.matlab.step(Tf_feedback_z)
 
 plt.figure()
 plt.plot(T_z, Y_z)
 plt.xlabel("Time")
-plt.title("Step response with feedback loop with z as output")
-plt.savefig('Plots/step_response_feedback_z.png', dpi=300)
-"""
+plt.title("step response with feedback loop with Z as the output")
+plt.savefig('Plots/z_feedback_step_response.png', dpi=300)
