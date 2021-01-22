@@ -394,32 +394,40 @@ plt.title("step response with Z feedback loop and Z as the output")
 plt.savefig('Plots/z_feedback_step_response.png', dpi=300)
 
 
-"""
+
+
+
 print('\n\n\n------------------------------------------------------------------')
 print('------ Saturation in the gamma control loop ---------')
-#Saturation of the gamma feedback loop
-#State space between gamma_ac and alpha ?
+
+delta_nz = 2.8
+
+alpha_max = alpha_eq + (alpha_eq - alpha_0) * delta_nz
+print("alpha max = ", alpha_max, " radians")
+print("alpha eq = ", alpha_eq, " radians")
+print("alpha 0 = ", alpha_0, " radians")
+print("delta_nz = ", delta_nz)
 
 A_alpha = Aq - K_gamma * Bq * np.array([0, 1, 0, 0, 0])
 B_alpha = K_gamma * Bq
 
+Tf_with_alpha_max = ss2tf(ss(A_alpha, B_alpha, np.array([0, 1, 0, 0, 0]), 0))
 
-print('\nTransfer function of the system with gamma feedback loop and alpha as the output :\n')
-Tf_feedback_alpha = ss2tf(ss(A_alpha, B_alpha, np.array([0, 1, 0, 0, 0]), 0))
-print(Tf_feedback_alpha)
+T = np.linspace(0,100,100)
+alpha_out = 0
+gamma_command = np.zeros(100)
+while  True:
+    y_gamma_max, T_gamma_max, X_gamma_max = control.matlab.lsim(Tf_with_alpha_max, U=gamma_command,T=T, X0=[0, 0])
+    alpha_out = y_gamma_max[-1] # we get the last value of alpha from the output of the simulation
+    if abs(alpha_max - alpha_out) < 0.01:
+        break
+    if alpha_max - alpha_out > 0:
+        gamma_command += 0.1
+    else:
+        gamma_command -= 0.1
+    
 
-control.matlab.damp(Tf_feedback_alpha)
-
-Y_alpha, T_alpha = control.matlab.step(Tf_feedback_alpha)
-plt.figure()
-plt.plot(T_alpha, Y_alpha)
-plt.xlabel('Time')
-plt.title("step response with gamma feedback loop and alpha as the output")
-plt.savefig('Plots/alpha_feedback_step_response.png', dpi=300)
-
-"""
-
-
+print("Gamma_max = ", np.degrees(gamma_command[-1]), " degrees")
 
 
 
