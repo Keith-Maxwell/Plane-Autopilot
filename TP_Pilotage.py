@@ -359,7 +359,7 @@ Y_gamma, T_gamma = control.matlab.step(Tf_feedback_gamma)
 plt.figure()
 plt.plot(T_gamma, Y_gamma)
 plt.xlabel('Time')
-plt.title("step response with feedback loop with gamma as the output")
+plt.title("step response with gamma feedback loop and gamma as the output")
 plt.savefig('Plots/gamma_feedback_step_response.png', dpi=300)
 
 
@@ -390,5 +390,89 @@ Y_z, T_z = control.matlab.step(Tf_feedback_z)
 plt.figure()
 plt.plot(T_z, Y_z)
 plt.xlabel("Time")
-plt.title("step response with feedback loop with Z as the output")
+plt.title("step response with Z feedback loop and Z as the output")
 plt.savefig('Plots/z_feedback_step_response.png', dpi=300)
+
+
+"""
+print('\n\n\n------------------------------------------------------------------')
+print('------ Saturation in the gamma control loop ---------')
+#Saturation of the gamma feedback loop
+#State space between gamma_ac and alpha ?
+
+A_alpha = Aq - K_gamma * Bq * np.array([0, 1, 0, 0, 0])
+B_alpha = K_gamma * Bq
+
+
+print('\nTransfer function of the system with gamma feedback loop and alpha as the output :\n')
+Tf_feedback_alpha = ss2tf(ss(A_alpha, B_alpha, np.array([0, 1, 0, 0, 0]), 0))
+print(Tf_feedback_alpha)
+
+control.matlab.damp(Tf_feedback_alpha)
+
+Y_alpha, T_alpha = control.matlab.step(Tf_feedback_alpha)
+plt.figure()
+plt.plot(T_alpha, Y_alpha)
+plt.xlabel('Time')
+plt.title("step response with gamma feedback loop and alpha as the output")
+plt.savefig('Plots/alpha_feedback_step_response.png', dpi=300)
+
+"""
+
+
+
+
+
+print('\n\n\n------------------------------------------------------------------')
+print('------ Flight Management ---------')
+
+
+initial_altitude = 10000
+level_altitude = 12800
+flare_start_altitude = 200
+duration = 1000
+
+def flare(t):
+    tau = 5
+    return flare_start_altitude * np.exp(-t/tau)
+
+# create the steady ascent profile
+command_ascent = np.linspace(start=initial_altitude, stop=level_altitude, num=50)
+# create the level flight profile
+command_level_flight = np.linspace(start=level_altitude, stop=level_altitude, num=50)
+# create the descent profile
+command_descent = np.linspace(start=level_altitude, stop=flare_start_altitude + 38, num=200)
+# create the flare profile
+command_flare = np.ones(50) * [flare(t) for t in range(50)]
+
+# assemble the commands in a single list of points
+total_command = np.concatenate((command_ascent, command_level_flight, command_descent, command_flare), axis=0)
+
+# create the time vector, same length as the sum of all the commands
+sim_time = np.linspace(start=0, stop=duration, num=350)
+
+
+# compute the response of the system
+Y_out, T_out, X_out = control.matlab.lsim(ss(A_z, B_z, np.eye(5), 0), U=total_command,T=sim_time, X0=[0, 0, 0, 0, initial_altitude])
+
+
+plt.figure()
+#plt.plot(sim_time, Y_out[:,0], label="gamma")
+#plt.plot(sim_time, Y_out[:,1], label="alpha")
+#plt.plot(sim_time, Y_out[:,2], label="q")
+#plt.plot(sim_time, Y_out[:,3], label="theta")
+plt.plot(sim_time, total_command, label="command")
+plt.plot(sim_time, Y_out[:,4], label="response")
+plt.legend()
+plt.ylabel("altitude in feet")
+plt.xlabel("time in seconds")
+plt.title("Evolution of the altitude Z")
+plt.savefig("Plots/simulation.png", dpi=300)
+
+plt.figure()
+plt.plot(sim_time, np.degrees(Y_out[:,0]), label="gamma")
+plt.ylabel("angle in degrees")
+plt.xlabel("time in seconds")
+plt.title("Evolution of the glide slope gamma")
+plt.savefig("Plots/glide_slope.png")
+
